@@ -2,4 +2,5 @@
 *.log
 *backup
 *__pycache__
+*.pytest*
 .env

@@ -15,9 +15,9 @@ DISCORD_LOG_PATH = f"{PROJ_LOG_PATH}/discord.log"
 # Load project envs
 load_dotenv()
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
-DEBUG_SERVER_ID = os.environ.get("DEBUG_SERVER_ID", "")
 
 # Initialization
+os.makedirs(PROJ_LOG_PATH, exist_ok=True)
 log_handler = logging.FileHandler(filename=DISCORD_LOG_PATH, encoding="utf-8", mode="w")
 logger = logging.getLogger("discord_logger")
 logger.addHandler(log_handler)
@@ -28,9 +28,9 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Local develop configuration
-EN_DEBUG = True
 DUMMY_ROLE = "Dummy"
-logger.setLevel(logging.INFO)
+LOGGING_LEVEL = logging.ERROR
+logger.setLevel(LOGGING_LEVEL)
 
 # Events
 @bot.event
@@ -117,7 +117,7 @@ async def poll(ctx, *, question):
 
 def main():
     try:
-        bot.run(DISCORD_TOKEN, log_handler=log_handler, log_level=logging.DEBUG)
+        bot.run(DISCORD_TOKEN, log_handler=log_handler, log_level=LOGGING_LEVEL)
     except KeyboardInterrupt:
         logger.debug(f"Bot stopped manually.")
     except Exception as e:
