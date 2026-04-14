@@ -37,6 +37,26 @@ To add *slash* command use:
         """Custom slash command description. Usage /CMD"""
 ```
 
+### Big clock scheduler flow
+- Slash command `/setbigclock` configures guild state in `BIG_CLOCK_LIST_EN`
+- Scheduler logic lives in `src/bot/tasks.py`
+- Voice helpers live in `src/bot/voice.py`
+
+### Test locations
+- Command tests: `tests/bot/test_commands.py`
+- Scheduler unit tests: `tests/bot/test_tasks.py`
+- Scheduler integration tests: `tests/bot/test_integration_scheduler.py`
+- Bot lifecycle/loading tests: `tests/bot/test_client.py`
+
+When changing `/setbigclock`, update command and scheduler tests together.
+
+# Local run and build guide
+- `make local` runs `python3 -m src`
+- `make build` runs `docker-compose up --build -d`
+- `make test` runs `pytest tests/ -v`
+
+Use module-mode execution (`python3 -m src`) to keep package imports consistent.
+
 # Version control guide (Git)
 Version control practices adapted in this project
 

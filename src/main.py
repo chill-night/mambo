@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from webserver import keep_alive
-from bot.client import MamboBot
+from src.webserver import keep_alive
+from src.bot.client import MamboBot
 
 # ---------- Main ----------
 def main():

@@ -4,13 +4,26 @@ import asyncio
 import datetime as dt
 import time
 import logging
+from src.utils.config import Config
 
 logger = logging.getLogger("discord_logger")
 
-# Constants (move from main.py if needed)
-BIG_CLOCK_PERIOD = 9
+BIG_CLOCK_PERIOD = Config.BIG_CLOCK_PERIOD
 BIG_CLOCK_RING_PATH = "assets/audio/tracks/bigclockring.mp3"  # relative to project root
-HOUR_INTERVAL = 3600
+HOUR_INTERVAL = Config.HOUR_INTERVAL
+
+
+def start_bigclock_scheduler(bot: commands.Bot):
+    """Start scheduler once and reuse existing running task if present."""
+    existing_task = getattr(bot, "_bigclock_scheduler_task", None)
+    if existing_task and not existing_task.done():
+        return existing_task
+
+    task = bot.loop.create_task(
+        tick_modulo_scheduler(bot, period_seconds=HOUR_INTERVAL)
+    )
+    setattr(bot, "_bigclock_scheduler_task", task)
+    return task
 
 async def tick_modulo_scheduler(bot: commands.Bot, *, period_seconds: int):
     """
@@ -48,11 +61,12 @@ async def tick_modulo_scheduler(bot: commands.Bot, *, period_seconds: int):
                     vc = await ch.connect()
 
                 from .voice import make_ffmpeg_source, play_audio, wait_play_done
-                source = make_ffmpeg_source(cfg["audio"])
+                audio_path = cfg.get("audio") or cfg.get("audio_path") or BIG_CLOCK_RING_PATH
+                source = make_ffmpeg_source(audio_path)
 
                 play_audio(vc, source)
 
-                await wait_play_done(vc, max_seconds=cfg["seconds"])
+                await wait_play_done(vc, max_seconds=cfg.get("seconds", BIG_CLOCK_PERIOD))
                 if vc.is_connected():
                     await vc.disconnect()
             except Exception as e:

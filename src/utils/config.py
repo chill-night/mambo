@@ -24,6 +24,12 @@ class Config:
     DISCORD_LOG_PATH = LOG_DIR / "discord.log"
     LOGGING_LEVEL = getattr(logging, os.getenv("LOGGING_LEVEL", "INFO"))
 
+    # Big clock feature timing
+    # HOUR_INTERVAL controls scheduler cadence.
+    # BIG_CLOCK_PERIOD controls max playback time per trigger.
+    HOUR_INTERVAL = 60
+    BIG_CLOCK_PERIOD = 9
+
     @classmethod
     def validate(cls):
         """Validate required config exists"""

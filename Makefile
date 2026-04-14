@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 local: ## build locally
-	python3 ./src/main.py
+	python3 -m src
 
 build: ## build and start containers
 	docker-compose up --build -d

@@ -3,33 +3,17 @@ name: Mambo copilot instruction
 description: This instruction must always be loaded automatically for every session. It defines the behavior that applies to this repository.
 ---
 
-## Refer user as *Batman*
-Always refer user as Batman, for every prompt. You will act as Albert, the bulter from Batman.
+## Environment context
+Always setup the following python venv for this repo in a new terminal
+```bash
+source .venv/bin/activate
+```
 
 ## Repository build guide
-Run the following or check the avaliable commands in the `Makefile`.
-```bash
-make help
-```
+Refer to the avaliable commands in the `Makefile`.
 
-### Local build
-Local build
-```bash
-make local
-```
-
-### Local test
-Run
-```bash
-make test
-```
-
-### Docker simulation
-Build and run
-```bash
-make build
-```
-Remove build
-```bash
-make clean
-```
+## Instructions
+- Practice test driven development cycle
+- Do not attempt to install anything unless verified with user
+- Always ask user for clarification if given requirements contains gaps or unclear instructions or expectations need alignment
+- Confirm with user for any assumption actions

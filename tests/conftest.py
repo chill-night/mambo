@@ -4,7 +4,26 @@ import pytest
 import os
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
+
+class _AsyncRecorder:
+    def __init__(self):
+        self.calls = []
+
+    async def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+
+    def assert_called_once(self):
+        assert len(self.calls) == 1
+
+    @property
+    def call_args(self):
+        if not self.calls:
+            raise AssertionError("async call was not made")
+        args, kwargs = self.calls[-1]
+        return SimpleNamespace(args=args, kwargs=kwargs)
 
 # Define project paths
 PROJ_TEST_PATH = Path(__file__).parent
@@ -41,7 +60,7 @@ def mock_discord_token(monkeypatch):
 def mock_ctx():
     """Mock Discord context for command testing"""
     ctx = MagicMock()
-    ctx.send = AsyncMock()
+    ctx.send = _AsyncRecorder()
     ctx.author = MagicMock()
     ctx.author.name = "TestUser"
     ctx.guild = MagicMock()
@@ -52,7 +71,7 @@ def mock_ctx():
 def mock_interaction():
     """Mock Discord interaction for slash command testing"""
     interaction = MagicMock()
-    interaction.response.send_message = AsyncMock()
+    interaction.response.send_message = _AsyncRecorder()
     interaction.user = MagicMock()
     interaction.user.name = "TestUser"
     interaction.user.mention = "<@123456789>"
@@ -67,5 +86,5 @@ def mock_message():
     message.author.name = "TestUser"
     message.content = "Test message"
     message.channel = MagicMock()
-    message.channel.send = AsyncMock()
+    message.channel.send = _AsyncRecorder()
     return message

@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import logging
 from src.utils.config import Config
+from .tasks import start_bigclock_scheduler
 
 class MamboBot(commands.Bot):
     """
@@ -68,12 +69,15 @@ class MamboBot(commands.Bot):
 
         # Sync slash commands
         await self.tree.sync()
+
+        # Start periodic big clock scheduler (idempotent helper).
+        start_bigclock_scheduler(self)
         self.logger.info("Command tree sync done")
 
     async def load_commands(self):
         """Load all command modules"""
         extensions = [
-            'bot.commands',
+            'src.bot.commands',
             # 'bot.handlers', # No longer needed
             # Add more as needed
         ]
@@ -85,6 +89,7 @@ class MamboBot(commands.Bot):
                 self.logger.info(f"Successfully loaded {extension}")
             except Exception as e:
                 self.logger.error(f"Failed to load {extension}: {e}", exc_info=True)
+                raise
 
     async def on_ready(self):
         """Called when bot is ready"""

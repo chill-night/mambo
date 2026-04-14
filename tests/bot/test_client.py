@@ -1,7 +1,7 @@
 import pytest
 import discord
 from discord.ext import commands
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 from src.bot.client import MamboBot
 from src.utils.config import Config
 
@@ -62,16 +62,52 @@ class TestBotLifecycle:
     """Test bot startup and shutdown"""
 
     @pytest.mark.asyncio
+    async def test_load_commands_uses_package_qualified_extension(self, bot):
+        loaded_extensions = []
+
+        async def _load_extension(extension_name):
+            loaded_extensions.append(extension_name)
+
+        with patch.object(bot, 'load_extension', new=_load_extension):
+            await bot.load_commands()
+
+        assert loaded_extensions == ["src.bot.commands"]
+
+    @pytest.mark.asyncio
+    async def test_load_commands_fail_fast_on_extension_error(self, bot):
+        async def _load_extension(_extension_name):
+            raise RuntimeError("load failure")
+
+        with patch.object(bot, 'load_extension', new=_load_extension), \
+            patch.object(bot.logger, 'error') as mock_error, \
+            pytest.raises(RuntimeError):
+
+            await bot.load_commands()
+
+        mock_error.assert_called_once()
+
+    @pytest.mark.asyncio
     async def test_setup_hook_initialization(self, bot):
-        with patch.object(bot, 'load_commands', new_callable=AsyncMock) as mock_load, \
-            patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync:
+        calls = {"load": 0, "sync": 0}
+
+        async def _load_commands():
+            calls["load"] += 1
+
+        async def _sync_tree(*_args, **_kwargs):
+            calls["sync"] += 1
+
+        with patch.object(bot, 'load_commands', new=_load_commands), \
+            patch.object(bot.tree, 'sync', new=_sync_tree), \
+            patch('src.bot.client.start_bigclock_scheduler') as mock_start_scheduler:
 
             await bot.setup_hook()
 
             # check if `load_commands` is triggered
-            mock_load.assert_called_once()
+            assert calls["load"] == 1
             # check if sync commands is triggered
-            mock_sync.assert_called_once()
+            assert calls["sync"] == 1
+            # check if scheduler startup is triggered
+            mock_start_scheduler.assert_called_once_with(bot)
 
     @pytest.mark.asyncio
     async def test_on_ready_logs_username(self, bot):
@@ -81,10 +117,10 @@ class TestBotLifecycle:
         mock_user  = MagicMock()
         mock_user.__str__ = lambda self:test_botname
 
-        # Patch the 'user' property and the logger simultaneously
-        with patch.object(type(bot), 'user', new_callable=PropertyMock, return_value=mock_user), \
-            patch.object(type(bot), 'guilds', new_callable=PropertyMock, return_value=[]), \
-            patch.object(bot.logger, 'info') as mock_log:
+        bot._connection.user = mock_user
+        bot._connection._guilds = {}
+
+        with patch.object(bot.logger, 'info') as mock_log:
 
             await bot.on_ready()
 
@@ -101,17 +137,23 @@ class TestBotLifecycle:
         num_guilds = 3
         mock_user  = MagicMock()
         mock_user.__str__ = lambda self:test_botname
-        mock_user.guilds = [MagicMock() for _ in range(num_guilds)]
+        mock_guilds = []
+        for idx in range(num_guilds):
+            guild = MagicMock()
+            guild.id = idx + 1
+            guild.name = f"Guild-{idx + 1}"
+            mock_guilds.append(guild)
 
-        with patch.object(type(bot), 'user', new_callable=PropertyMock, return_value=mock_user), \
-                patch.object(type(bot), 'guilds', new_callable=PropertyMock, return_value=mock_user.guilds), \
-                patch.object(bot.logger, 'info') as mock_log:
+        bot._connection.user = mock_user
+        bot._connection._guilds = {guild.id: guild for guild in mock_guilds}
 
-                await bot.on_ready()
+        with patch.object(bot.logger, 'info') as mock_log:
 
-                log_outputs = [call.args[0] for call in mock_log.call_args_list if call.args]
-                assert any(str(num_guilds) in msg and 'guild' in msg for msg in log_outputs), \
-                    f"Expected guild count in logs, got: {log_outputs}"
+            await bot.on_ready()
+
+            log_outputs = [call.args[0] for call in mock_log.call_args_list if call.args]
+            assert any(str(num_guilds) in msg and 'guild' in msg for msg in log_outputs), \
+                f"Expected guild count in logs, got: {log_outputs}"
 
 class TestBotErrorHandling:
     """Test error handling in run_bot"""

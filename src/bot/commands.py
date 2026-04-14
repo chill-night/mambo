@@ -5,6 +5,7 @@ import logging
 import uuid
 
 from .voice import get_interaction_voice_channel, int_disconnect_voice
+from .tasks import BIG_CLOCK_LIST_EN, BIG_CLOCK_RING_PATH, BIG_CLOCK_PERIOD
 
 logger = logging.getLogger("discord_logger")
 
@@ -77,6 +78,39 @@ class BasicCommands(commands.Cog):
                 "❌ Failed to leave voice channel.", ephemeral=True
             )
 
+    @app_commands.command(name="setbigclock", description="Set big clock")
+    async def setbigclock(self, interaction: discord.Interaction, enable: bool):
+        guild = interaction.guild
+        if not guild:
+            await interaction.response.send_message(
+                "❌ This command can only be used in a server.", ephemeral=True
+            )
+            return
+
+        ch = get_interaction_voice_channel(interaction)
+        if not ch:
+            await interaction.response.send_message(
+                "❌ You must be in a voice channel.", ephemeral=True
+            )
+            return
+
+        try:
+            BIG_CLOCK_LIST_EN[guild.id] = {
+                "channel_id": ch.id,
+                "audio": BIG_CLOCK_RING_PATH,
+                "audio_path": BIG_CLOCK_RING_PATH,
+                "seconds": BIG_CLOCK_PERIOD,
+                "enable": enable,
+            }
+
+            await interaction.response.send_message(
+                f"✅ Set Big Clock is {enable} from {interaction.user.mention}!"
+            )
+        except Exception:
+            logger.exception("Failed to set big clock configuration")
+            await interaction.response.send_message(
+                "❌ Failed to set big clock.", ephemeral=True
+            )
 
 async def setup(bot):
     """Load the cog"""

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from src.bot.handlers import EventHandlers
 
 
@@ -29,12 +29,18 @@ class TestOnMessage:
         mock_message.author.bot = False
         mock_message.content = "Hello bot!"
 
+        calls = {"process_commands": 0}
+
+        async def _process_commands(_message):
+            calls["process_commands"] += 1
+
         # check the logger `debug`
-        with patch.object(event_handlers.bot, "process_commands", new_callable=AsyncMock):
+        with patch.object(event_handlers.bot, "process_commands", new=_process_commands):
             # Should log the message
             with patch.object(event_handlers.bot.logger, 'debug') as mock_log:
                 await event_handlers.on_message(mock_message)
                 mock_log.assert_called()
+                assert calls["process_commands"] == 1
 
                 call_args = str(mock_log.call_args)
                 # verify that the test message is in the logger
