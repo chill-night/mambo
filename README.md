@@ -8,7 +8,7 @@ Invite [link](https://discord.com/oauth2/authorize?client_id=1462368773104210116
  - [ ] Find food for user
  - [x] Have a big clock ring every hour
 
-## Big Clock command
+## Big Cock command
 Use slash command `/setbigclock` to configure hourly ring in your current voice channel.
 
 - Usage: `/setbigclock enable:true` or `/setbigclock enable:false`
